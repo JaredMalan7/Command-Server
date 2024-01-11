@@ -24,11 +24,15 @@ const server = net.createServer((socket) => {
     socket.on('data', (chunk) => {
         let clientMsg = chunk.toString().trim()
 
-        // Rebroadcast the client's message to all clients (excluding the sender)
-        broadcast(`Client${clientId}: ${clientMsg}\n`, clientId)
-
-        // Log the message to chat.log
-        fs.appendFileSync('chat.log', `Client${clientId}: ${clientMsg}\n`)
+        // Check if it's a whisper
+        if (clientMsg.startsWith('/w')) {
+            handleWhisperCommand(clientMsg, clientId)
+        } else {
+            // Rebroadcast the client's message to all clients (excluding the sender)
+            broadcast(`Client${clientId}: ${clientMsg}\n`, clientId)
+            // Log the message to chat.log
+            fs.appendFileSync('chat.log', `Client${clientId}: ${clientMsg}\n`)
+        }
     })
 
     // Handles client disconnection
@@ -51,40 +55,44 @@ const server = net.createServer((socket) => {
 })
 
 // Function to broadcast messages to all clients
-function broadcast(message, senderId) {
+function broadcast(message, senderId, isWhisper = false) {
     clients.forEach((client) => {
         if (client.id !== senderId) {
-            client.socket.write(message)
+            if (!isWhisper) {
+                client.socket.write(message)
+            }
         }
     })
 }
 
 // Function to handle whisper command
 function handleWhisperCommand(command, senderId) {
-    const arg = command.spli(' ')
+    const args = command.split(' ')
 
-    if (arg.length < 3) {
+    if (args.length < 3) {
         // error message for incorrect number of inputs
         const errorMessage = 'Invalid whisper command. Usage: /w <username> <message>\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
-        fs.appendFileSync('server.log', errorMessage)
+        fs.appendFileSync('chat.log', errorMessage)
         return
     }
 
-    const receiverUsername = arg[1]
+    const receiverUsername = args[1]
     const receiver = clients.find((client) => `Client${client.id}` === receiverUsername)
 
     if (!receiver || senderId === receiver.id) {
-        // error message for invalod username or attempting to whisper themselves
+        // error message for invalid username or attempting to whisper themselves
         const errorMessage = 'Invalid username or attempting to whisper themselves.\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
-        fs.appendFileSync('Server.log', errorMessage)
+        fs.appendFileSync('chat.log', errorMessage)
         return
     }
 
     const whisperMessage = args.slice(2).join(' ')
-    // send private message containing the whisper sender's name the whispered message
+    // send private message containing the whisper sender's name and the whispered message
     receiver.socket.write(`Whisper from client${senderId}: ${whisperMessage}\n`)
     // log result to the server.log file
-    fs.appendFileSync('server.log', `Whisper sent from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`)
+    fs.appendFileSync('chat.log', `Whisper sent from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`)
+    // Only to the sender and the recipient, indicating it's a whisper
+    broadcast(`Whisper from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`, senderId, true)
 }
