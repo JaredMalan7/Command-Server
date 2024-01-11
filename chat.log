@@ -1,0 +1,23 @@
+Client1 connected
+Client1 has joined the chat.
+Client1: Hello
+Client2 connected
+Client2 has joined the chat.
+Client2: /w Client1 Hello
+Client2: /w Client2 hello to myself
+Client2: Hello
+Client2: /w Client2 Hello, this is a whisper!
+Client1: /w Client2 Hello, this is a whisper!
+Client3 connected
+Client3 has joined the chat.
+Client3: /w Client2 Hello, this is a whisper!
+Client2: /w Client2 Hello, this is a whisper!
+Client3: /w Client2 Hello, this is a whisper!
+Client1: /w Client2 Hello, this is a whisper!
+Client1: /w Client2 Hello, this is a whisper!
+Client2: /w Client2 Hello, this is a whisper!
+Client2: /w Client3 this is a test only for client3
+Client3: /w Client2 Hello, this is a whisper!
+Client3: /w Client3 this is a whisper to myself
+Client2: /w Client2 this is a whisper to muself
+Client1: w/ Client1 this is a test whisper to myself

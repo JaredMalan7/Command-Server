@@ -58,3 +58,33 @@ function broadcast(message, senderId) {
         }
     })
 }
+
+// Function to handle whisper command
+function handleWhisperCommand(command, senderId) {
+    const arg = command.spli(' ')
+
+    if (arg.length < 3) {
+        // error message for incorrect number of inputs
+        const errorMessage = 'Invalid whisper command. Usage: /w <username> <message>\n'
+        clients.find((client) => client.id === senderId).socket.write(errorMessage)
+        fs.appendFileSync('server.log', errorMessage)
+        return
+    }
+
+    const receiverUsername = arg[1]
+    const receiver = clients.find((client) => `Client${client.id}` === receiverUsername)
+
+    if (!receiver || senderId === receiver.id) {
+        // error message for invalod username or attempting to whisper themselves
+        const errorMessage = 'Invalid username or attempting to whisper themselves.\n'
+        clients.find((client) => client.id === senderId).socket.write(errorMessage)
+        fs.appendFileSync('Server.log', errorMessage)
+        return
+    }
+
+    const whisperMessage = args.slice(2).join(' ')
+    // send private message containing the whisper sender's name the whispered message
+    receiver.socket.write(`Whisper from client${senderId}: ${whisperMessage}\n`)
+    // log result to the server.log file
+    fs.appendFileSync('server.log', `Whisper sent from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`)
+}
