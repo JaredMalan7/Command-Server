@@ -58,14 +58,21 @@ const server = net.createServer((socket) => {
 
 // Function to broadcast messages to all clients
 function broadcast(message, senderId, isWhisper = false) {
+    const senderClient = clients.find((client) => client.id === senderId)
+    const senderUsername = senderClient.username || `Client${senderId}`
+
     clients.forEach((client) => {
         if (client.id !== senderId) {
             if (!isWhisper) {
-                client.socket.write(message)
+                const displayUsername = (client.id === senderId) ? senderUsername : senderClient.username || `Client${senderId}`
+                const updatedMessage = message.replace(`Client${senderId}`, displayUsername)
+                client.socket.write(`${updatedMessage}\n`)
             }
         }
     })
 }
+
+
 
 // Function to handle whisper command
 function handleWhisperCommand(command, senderId) {
@@ -115,7 +122,7 @@ function handleUsernameCommand(command, senderId) {
     const newUsername = args[1]
 
     // Check if the new username is already in use
-    if (clients.some((client) => client.id !== senderId && `Client${client.id}` === newUsername)) {
+    if (clients.some((client) => client.id !== senderId && client.username === newUsername)) {
         const errorMessage = 'Username already in use. Please choose a different one.\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
         fs.appendFileSync('chat.log', errorMessage)
@@ -123,7 +130,8 @@ function handleUsernameCommand(command, senderId) {
     }
 
     // Check if the new username is the same as the old username
-    const currentUsername = `Client${senderId}`
+    const clientToUpdate = clients.find((client) => client.id === senderId)
+    const currentUsername = clientToUpdate.username || `Client${senderId}`
     if (currentUsername === newUsername) {
         const errorMessage = 'New username must be different from the current one.\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
@@ -131,12 +139,16 @@ function handleUsernameCommand(command, senderId) {
         return
     }
 
-    // Update the username
-    clients.find((client) => client.id === senderId).socket.write(`Username updated to: ${newUsername}\n`)
+    // Update the username in the clients array
+    clientToUpdate.username = newUsername
+
+    // Notify the user about the successful update
+    clientToUpdate.socket.write(`Username updated to: ${newUsername}\n`)
 
     // Broadcast the username change to all clients
     broadcast(`Client${senderId} changed their username to: ${newUsername}\n`, senderId)
 
     // Log the username change to chat.log
-    fs.appendFileSync('chat.log', `Client${senderId} changed their username to: ${newUsername}\n`)
+    fs.appendFileSync('chat.log', `${currentUsername} changed their username to: ${newUsername}\n`)
 }
+

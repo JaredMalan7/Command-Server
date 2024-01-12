@@ -21,8 +21,11 @@ const client = net.createConnection({ port: 3000 }, () => {
 })
 
 client.on('data', (data) => {
-    //console.log any messages received from the server.
-    console.log('Server: ' + data.toString())
+    // Filter out messages that originate from the client
+    const message = data.toString().trim()
+    if (message && !message.startsWith('Server: ')) {
+        console.log(message)
+    }
 })
 
 client.setEncoding('utf-8')
