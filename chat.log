@@ -23,3 +23,24 @@ Client2 has joined the chat.
 Client3 connected
 Client3 has joined the chat.
 Whisper sent from client1 to Client3: test
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Client1: /username Jared
+Client1: hello
+Client2: /username John
+Client3: /username John
+Client2: hello
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client1 changed their username to: Jared
+Client3 connected
+Client3 has joined the chat.
+Client1: hello guys
+Client1 changed their username to: Jared
+Client1: hello
