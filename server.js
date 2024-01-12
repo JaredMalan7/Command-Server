@@ -3,26 +3,27 @@ const fs = require('fs')
 
 const clients = []
 let clientIdCounter = 0
+let clientMsg = '' // Initialize clientMsg variable
 
 const server = net.createServer((socket) => {
     const clientId = ++clientIdCounter
-    clients.push({ id: clientId, socket })
+    clients.push({ id: clientId, socket, username: `Client${clientId}` })
 
     // Log connection message to chat.log file
     fs.appendFileSync('chat.log', `Client${clientId} connected\n`)
 
     // Send welcome message to the newly connected client
-    socket.write(`Welcome to the chat, Client${clientId}!\n`)
+    socket.write(`Welcome to the chat, ${clients[clientId - 1].username}!\n`)
 
     // Send notification to all other clients about the new user
-    broadcast(`Client${clientId} has joined the chat.\n`, clientId)
+    broadcast(`${clients[clientId - 1].username} has joined the chat.\n`, clientId)
 
     // Log the connection message to chat.log
-    fs.appendFileSync('chat.log', `Client${clientId} has joined the chat.\n`)
+    fs.appendFileSync('chat.log', `${clients[clientId - 1].username} has joined the chat.\n`)
 
     // Handles data received from the client
     socket.on('data', (chunk) => {
-        let clientMsg = chunk.toString().trim()
+        clientMsg = chunk.toString().trim() // Update clientMsg on every data event
 
         // Check if it's a whisper
         if (clientMsg.startsWith('/w')) {
@@ -31,9 +32,9 @@ const server = net.createServer((socket) => {
             handleUsernameCommand(clientMsg, clientId)
         } else {
             // Rebroadcast the client's message to all clients (excluding the sender)
-            broadcast(`Client${clientId}: ${clientMsg}\n`, clientId)
+            broadcast(`${clients[clientId - 1].username}: ${clientMsg}\n`, clientId)
             // Log the message to chat.log
-            fs.appendFileSync('chat.log', `Client${clientId}: ${clientMsg}\n`)
+            fs.appendFileSync('chat.log', `${clients[clientId - 1].username}: ${clientMsg}\n`)
         }
     })
 
@@ -42,14 +43,12 @@ const server = net.createServer((socket) => {
         // Remove the client from the list of connected clients
         const index = clients.findIndex((client) => client.id === clientId)
         if (index !== -1) {
-            clients.splice(index, 1)
+            const disconnectedClient = clients.splice(index, 1)[0]
+            // Send notification to all other clients about the user's disconnection
+            broadcast(`${disconnectedClient.username} has left the chat.\n`, clientId)
+            // Log the disconnection message to chat.log
+            fs.appendFileSync('chat.log', `${disconnectedClient.username} has left the chat.\n`)
         }
-
-        // Send notification to all other clients about the user's disconnection
-        broadcast(`Client${clientId} has left the chat.\n`, clientId)
-
-        // Log the disconnection message to chat.log
-        fs.appendFileSync('chat.log', `Client${clientId} has left the chat.\n`)
     })
 
 }).listen(3000, () => {
@@ -59,20 +58,15 @@ const server = net.createServer((socket) => {
 // Function to broadcast messages to all clients
 function broadcast(message, senderId, isWhisper = false) {
     const senderClient = clients.find((client) => client.id === senderId)
-    const senderUsername = senderClient.username || `Client${senderId}`
 
     clients.forEach((client) => {
         if (client.id !== senderId) {
             if (!isWhisper) {
-                const displayUsername = (client.id === senderId) ? senderUsername : senderClient.username || `Client${senderId}`
-                const updatedMessage = message.replace(`Client${senderId}`, displayUsername)
-                client.socket.write(`${updatedMessage}\n`)
+                client.socket.write(`${message}\n`)
             }
         }
     })
 }
-
-
 
 // Function to handle whisper command
 function handleWhisperCommand(command, senderId) {
@@ -87,7 +81,7 @@ function handleWhisperCommand(command, senderId) {
     }
 
     const receiverUsername = args[1]
-    const receiver = clients.find((client) => `Client${client.id}` === receiverUsername)
+    const receiver = clients.find((client) => client.username === receiverUsername)
 
     if (!receiver || senderId === receiver.id) {
         // error message for invalid username or attempting to whisper themselves
@@ -99,13 +93,12 @@ function handleWhisperCommand(command, senderId) {
 
     const whisperMessage = args.slice(2).join(' ')
     // send private message containing the whisper sender's name and the whispered message
-    receiver.socket.write(`Whisper from client${senderId}: ${whisperMessage}\n`)
+    receiver.socket.write(`Whisper from ${clients[senderId - 1].username}: ${whisperMessage}\n`)
     // log result to the server.log file
-    fs.appendFileSync('chat.log', `Whisper sent from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`)
+    fs.appendFileSync('chat.log', `Whisper sent from ${clients[senderId - 1].username} to ${receiver.username}: ${whisperMessage}\n`)
     // Only to the sender and the recipient, indicating it's a whisper
-    broadcast(`Whisper from client${senderId} to Client${receiver.id}: ${whisperMessage}\n`, senderId, true)
+    broadcast(`Whisper from ${clients[senderId - 1].username} to ${receiver.username}: ${whisperMessage}\n`, senderId, true)
 }
-
 
 // Function to handle username command
 function handleUsernameCommand(command, senderId) {
@@ -121,7 +114,6 @@ function handleUsernameCommand(command, senderId) {
 
     const newUsername = args[1]
 
-    // Check if the new username is already in use
     if (clients.some((client) => client.id !== senderId && client.username === newUsername)) {
         const errorMessage = 'Username already in use. Please choose a different one.\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
@@ -129,9 +121,9 @@ function handleUsernameCommand(command, senderId) {
         return
     }
 
-    // Check if the new username is the same as the old username
     const clientToUpdate = clients.find((client) => client.id === senderId)
-    const currentUsername = clientToUpdate.username || `Client${senderId}`
+    const currentUsername = clientToUpdate.username
+
     if (currentUsername === newUsername) {
         const errorMessage = 'New username must be different from the current one.\n'
         clients.find((client) => client.id === senderId).socket.write(errorMessage)
@@ -139,16 +131,12 @@ function handleUsernameCommand(command, senderId) {
         return
     }
 
-    // Update the username in the clients array
     clientToUpdate.username = newUsername
-
-    // Notify the user about the successful update
     clientToUpdate.socket.write(`Username updated to: ${newUsername}\n`)
 
     // Broadcast the username change to all clients
-    broadcast(`Client${senderId} changed their username to: ${newUsername}\n`, senderId)
+    broadcast(`${currentUsername} changed their username to: ${newUsername}\n`, senderId)
 
     // Log the username change to chat.log
     fs.appendFileSync('chat.log', `${currentUsername} changed their username to: ${newUsername}\n`)
 }
-
