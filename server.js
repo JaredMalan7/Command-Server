@@ -23,19 +23,18 @@ const server = net.createServer((socket) => {
 
     // Handles data received from the client
     socket.on('data', (chunk) => {
-        clientMsg = chunk.toString().trim() // Update clientMsg on every data event
+        clientMsg = chunk.toString().trim()
 
-        // Check if it's a whisper
         if (clientMsg.startsWith('/w')) {
             handleWhisperCommand(clientMsg, clientId)
         } else if (clientMsg.startsWith('/username')) {
             handleUsernameCommand(clientMsg, clientId)
         } else if (clientMsg.startsWith('/kick')) {
             handleKickCommand(clientMsg, clientId)
+        } else if (clientMsg.startsWith('/clientlist')) {
+            handleClientListCommand(clientId)
         } else {
-            // Rebroadcast the client's message to all clients (excluding the sender)
             broadcast(`${clients[clientId - 1].username}: ${clientMsg}\n`, clientId)
-            // Log the message to chat.log
             fs.appendFileSync('chat.log', `${clients[clientId - 1].username}: ${clientMsg}\n`)
         }
     })
@@ -183,4 +182,10 @@ function handleKickCommand(command, senderId) {
     if (index !== -1) {
         clients.splice(index, 1)
     }
+}
+
+//function to handle clientlist command
+function handleClientListCommand(senderId) {
+    const clientNames = clients.map(client => client.username).join(', ')
+    clients.find(client => client.id === senderId).socket.write(`Connected clients: ${clientNames}\n`)
 }

@@ -23,3 +23,28 @@ Client2 changed their username to: Jared
 Invalid kick command. Usage: /kick <username> <adminPassword>
 Invalid username or attempting to kick themselves.
 Jared has been kicked from the chat by Client1.
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Client2 changed their username to: Jared
