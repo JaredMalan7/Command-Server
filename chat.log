@@ -11,3 +11,15 @@ Client1 changed their username to: Jared
 Jared: hello
 Jared: how are you?
 Client2: hello 
+Client1 connected
+Client1 has joined the chat.
+Client2 connected
+Client2 has joined the chat.
+Client3 connected
+Client3 has joined the chat.
+Invalid username or attempting to kick themselves.
+Client3 has been kicked from the chat by Client1.
+Client2 changed their username to: Jared
+Invalid kick command. Usage: /kick <username> <adminPassword>
+Invalid username or attempting to kick themselves.
+Jared has been kicked from the chat by Client1.

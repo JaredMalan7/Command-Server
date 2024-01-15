@@ -30,6 +30,8 @@ const server = net.createServer((socket) => {
             handleWhisperCommand(clientMsg, clientId)
         } else if (clientMsg.startsWith('/username')) {
             handleUsernameCommand(clientMsg, clientId)
+        } else if (clientMsg.startsWith('/kick')) {
+            handleKickCommand(clientMsg, clientId)
         } else {
             // Rebroadcast the client's message to all clients (excluding the sender)
             broadcast(`${clients[clientId - 1].username}: ${clientMsg}\n`, clientId)
@@ -141,3 +143,44 @@ function handleUsernameCommand(command, senderId) {
     fs.appendFileSync('chat.log', `${currentUsername} changed their username to: ${newUsername}\n`)
 }
 
+//variable to sotre the adming password
+const adminPassword = 'supersecretpw'
+
+// Function to handle kick command
+function handleKickCommand(command, senderId) {
+    const args = command.split(' ')
+
+    if (args.length !== 3 || args[2] !== adminPassword) {
+        // error message for incorrect number of inputs or incorrect admin password
+        const errorMessage = 'Invalid kick command. Usage: /kick <username> <adminPassword>\n'
+        clients.find((client) => client.id === senderId).socket.write(errorMessage)
+        fs.appendFileSync('chat.log', errorMessage)
+        return
+    }
+
+    const targetUsername = args[1]
+    const targetClient = clients.find((client) => client.username === targetUsername)
+
+    if (!targetClient || senderId === targetClient.id) {
+        // error message for invalid username or attempting to kick themselves
+        const errorMessage = 'Invalid username or attempting to kick themselves.\n'
+        clients.find((client) => client.id === senderId).socket.write(errorMessage)
+        fs.appendFileSync('chat.log', errorMessage)
+        return
+    }
+
+    // Send private message to the kicked user
+    targetClient.socket.write(`You have been kicked from the chat by ${clients[senderId - 1].username}.\n`)
+
+    // Broadcast message to all clients about the kicked user
+    broadcast(`${targetClient.username} has been kicked from the chat.\n`, senderId)
+
+    // Log the kick message to chat.log
+    fs.appendFileSync('chat.log', `${targetClient.username} has been kicked from the chat by ${clients[senderId - 1].username}.\n`)
+
+    // Remove the kicked user from the list of connected clients
+    const index = clients.findIndex((client) => client.id === targetClient.id)
+    if (index !== -1) {
+        clients.splice(index, 1)
+    }
+}
