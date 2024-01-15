@@ -3,7 +3,7 @@ const fs = require('fs')
 
 const clients = []
 let clientIdCounter = 0
-let clientMsg = '' // Initialize clientMsg variable
+let clientMsg = ''
 
 const server = net.createServer((socket) => {
     const clientId = ++clientIdCounter
@@ -140,3 +140,4 @@ function handleUsernameCommand(command, senderId) {
     // Log the username change to chat.log
     fs.appendFileSync('chat.log', `${currentUsername} changed their username to: ${newUsername}\n`)
 }
+
